@@ -1,0 +1,176 @@
+---
+title: "Capstone4.6"
+author: "emil_d"
+date: "6 sierpnia 2017"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries
+Load libraries and set env.
+```{r echo = FALSE}
+#load libraries
+library(tm)
+library(ngramrr)
+library(RWeka)
+
+
+#set homedir
+homeDir <- "d:/Kursy/Coursea/capstone_dinal/capstone_final"
+setwd(homeDir)
+
+#set random
+set.seed(7309)
+
+```
+
+## Load and clean data
+```{r}
+
+#attention - files en_US.blogs.txt, en_US.news.txt, en_US.twiter.txt must be putted
+#in homedir or directory path mus be adjusted in file section.
+
+#function for load files.
+loadFile <- function(fileName){
+  fileName <- file(fileName, open = "rb")
+  cData <- readLines(fileName, skipNul = TRUE)
+  close(fileName)
+  cData
+}
+
+
+#function for sampling. Variable sampleCount defines percentage of data (15% is the best value in accordance to speed and quality) 
+getSample <- function(cData){
+  sampleCount <- .15
+  cData <- sample(cData, length(cData)*sampleCount)
+  return(cData)
+}
+
+#function for cleaning data - gathered from the StackExchange :)
+cleanData <- function (cData) {
+  cData <- tm_map(cData, content_transformer(tolower))
+  cData <- tm_map(cData, stripWhitespace)
+  cData <- tm_map(cData, removePunctuation)
+  cData <- tm_map(cData, removeNumbers)
+  removeURLs <- function(tData) gsub("http[[:alnum:]]*", "", tData) 
+  cData <- tm_map(cData, content_transformer(removeURLs))
+  cData <- tm_map(cData, removeWords, stopwords("english"))
+  return(cData)
+}
+
+
+#loadFile function use. Please adjust path to files if it is neccessary
+blogs <- loadFile("en_US.blogs.txt")
+news <- loadFile("en_US.news.txt")
+twitter <- loadFile("en_US.twitter.txt")
+
+#merging data
+vData <- c(getSample(blogs), getSample(news), getSample(twitter))
+
+#writing into text file for cleaning
+writeLines(vData, "./data/data.txt")
+
+#remove unneccessary variables
+rm(blogs, news, twitter, vData)
+
+#load text file
+vData <- VCorpus(DirSource("./data"))
+
+#call to function cleanData
+vData <- cleanData(vData)
+
+#save vData as RDS file
+saveRDS(vData, "vData.rds")
+
+```
+
+##Create n-Grams
+
+```{r}
+
+#tokenizer function
+createNgram <- function(tempData, n) {
+          NgramTokenizer <- function(x) {RWeka::NGramTokenizer(x, x = RWeka::Weka_control(min = n, max = n))}
+          tempData <- TermDocumentMatrix(tempData, control = list(tokenizer = NgramTokenizer))
+          return(tempData)
+}
+
+#sort function
+ngramSort <- function (tempData) {
+  tempData <- as.matrix(tempData)
+  tempData <- as.data.frame(tempData)
+  colnames(tempData) <- "Count"
+  tempData <- tempData[order(-tempData$Count), , drop = FALSE]
+  return(tempData)
+}
+
+#change directory
+setwd("./data")
+
+#loop for n-grams creation
+for (i in 1:4){
+  
+  #create filename with proper number
+  fileName <- paste("ngram",i,"sort.rds", sep ="")
+  #call n-gram function
+  ngram <- createNgram(vData, i)
+  #call sort function
+  ngramsort <- ngramSort(ngram)
+  #save ngram file 
+  saveRDS(ngramsort, fileName)
+  #clean unneccessary values
+  rm(ngram, ngramsort, fileName)
+}
+
+#create 4-gram    
+ngram4sort <- readRDS("ngram4sort.rds")
+fourGram <- data.frame(rows=rownames(ngram4sort), count=ngram4sort$Count)
+fourGram$rows <- as.character(fourGram$rows)
+fourGramSplit <- strsplit(as.character(fourGram$rows),split=" ")
+fourGram <- transform(fourGram,first = sapply(fourGramSplit,"[[",1),second = sapply(fourGramSplit,"[[",2),third = sapply(fourGramSplit,"[[",3), fourth = sapply(fourGramSplit,"[[",4))
+fourGram <- data.frame(unigram = fourGram$first,bigram = fourGram$second, trigram = fourGram$third, quadgram = fourGram$fourth, freq = fourGram$count,stringsAsFactors=FALSE)
+write.csv(fourGram[fourGram$freq > 1,],"./fourgram.csv",row.names=F)
+fourGram <- read.csv("./fourgram.csv",stringsAsFactors = F)
+saveRDS(fourGram,"./fourgram.rds")
+rm(fourGram, fourGramSplit, ngram4sort)
+
+#create 3-gram
+ngram3sort <- readRDS("ngram3sort.rds")
+threeGram <- data.frame(rows=rownames(ngram3sort),count=ngram3sort$Count)
+threeGram$rows <- as.character(threeGram$rows)
+threeGramSplit <- strsplit(as.character(threeGram$rows),split=" ")
+threeGram <- transform(threeGram,first = sapply(threeGramSplit,"[[",1),second = sapply(threeGramSplit,"[[",2),third = sapply(threeGramSplit,"[[",3))
+threeGram <- data.frame(unigram = threeGram$first,bigram = threeGram$second, trigram = threeGram$third, freq = threeGram$count,stringsAsFactors=FALSE)
+write.csv(threeGram[threeGram$freq > 1,],"./threegram.csv",row.names=F)
+threeGram <- read.csv("./threegram.csv",stringsAsFactors = F)
+saveRDS(threeGram,"./threegram.rds")
+rm(threeGram, threeGramSplit, ngram3sort)
+
+#create 2-gram
+ngram2sort <- readRDS("ngram2sort.rds")
+twoGram <- data.frame(rows=rownames(ngram2sort),count=ngram2sort$Count)
+twoGram$rows <- as.character(twoGram$rows)
+twoGramSplit <- strsplit(as.character(twoGram$rows),split=" ")
+twoGram <- transform(twoGram,first = sapply(twoGramSplit,"[[",1),second = sapply(twoGramSplit,"[[",2))
+twoGram <- data.frame(unigram = twoGram$first,bigram = twoGram$second,freq = twoGram$count,stringsAsFactors=FALSE)
+write.csv(twoGram[twoGram$freq > 1,],"./twogram.csv",row.names=F)
+twoGram <- read.csv("./twogram.csv",stringsAsFactors = F)
+saveRDS(twoGram,"./twogram.rds")
+rm(twoGram, twoGramSplit, ngram2sort)
+
+```
+
+#Copy model into shiny
+
+```{r}
+#file copy
+file.copy("./data/twogram.rds", "./word_predict")
+file.copy("./data/threegram.rds", "./word_predict")
+file.copy("./data/fourgram.rds", "./word_predict")
+```
+
+
