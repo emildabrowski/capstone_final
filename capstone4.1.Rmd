@@ -20,7 +20,7 @@ library(RWeka)
 
 
 #set homedir
-homeDir <- "d:/Kursy/Coursea/capstone_dinal/capstone_final"
+homeDir <- "d:/Kursy/Coursea/capstone_final"
 setwd(homeDir)
 
 #set random
