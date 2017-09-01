@@ -18,8 +18,6 @@ shinyUI(navbarPage("Project which is predicting words made to finish Data Scienc
                               mainPanel(
                                 h2("Predicted Word"),
                                 verbatimTextOutput("prediction"),
-                                strong("Sentence Input:"),
-                                textOutput('text1'),
                                 br()
                               )
                             )

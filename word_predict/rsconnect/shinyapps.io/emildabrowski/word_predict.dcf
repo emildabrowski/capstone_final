@@ -3,8 +3,8 @@ title: word_predict
 account: emildabrowski
 server: shinyapps.io
 appId: 209870
-bundleId: 963652
+bundleId: 963839
 url: https://emildabrowski.shinyapps.io/word_predict/
-when: 1504277334.81377
+when: 1504285724.80531
 asMultiple: FALSE
 asStatic: FALSE
