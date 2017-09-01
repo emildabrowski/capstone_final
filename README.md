@@ -9,4 +9,5 @@ word_predict
   
 
 Shiny app is located here: https://emildabrowski.shinyapps.io/word_predict/
+
 Presentation is located here: http://rpubs.com/emil_d/capstone_final/ 
