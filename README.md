@@ -1,4 +1,4 @@
-#This is my repo for Capstone Project
+# This is my repo for Capstone Project
 
 This repository contains:
 capstone4.1.Rmd - scripts for data preparation
